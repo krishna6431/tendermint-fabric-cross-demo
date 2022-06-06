@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -eu
+
+CUR_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}); pwd)
+source ${CUR_DIR}/color
+
+RELAYER_CONF="${DEMO_DIR}/.urelayer"
+RLY_BINARY=${BIN_DIR}/uly
+RLY="${RLY_BINARY} --home ${RELAYER_CONF}"
+println "Loaded relayer command: $RLY"
+
+CHAINID_ONE=ibc0
+CHAINID_TWO=ibc1
+RLYKEY=testkey
+PATH_NAME=ibc01

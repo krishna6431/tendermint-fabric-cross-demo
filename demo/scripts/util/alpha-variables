@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/../util/env
+source ${SCRIPT_DIR}/util/color
+source ${SCRIPT_DIR}/util/alpha-util
+
+# Note: Run after initialization done
+
+# Set address each user
+ALICE_ALPHA_ID=$(${ALPHACLI_BINARY} --home ${ALPHA_DATA} keys --keyring-backend="test" show alice -a)
+BOB_ALPHA_ID=$(${ALPHACLI_BINARY} --home ${ALPHA_DATA} keys --keyring-backend="test" show bob -a)
+TOKEN_OWNER_ALPHA_ID=$(${ALPHACLI_BINARY} --home ${ALPHA_DATA} keys --keyring-backend="test" show tokenowner -a)
+
+echo "ALICE_ALPHA_ID is $ALICE_ALPHA_ID"
+echo "BOB_ALPHA_ID is $BOB_ALPHA_ID"
+echo "TOKEN_OWNER_ALPHA_ID is $TOKEN_OWNER_ALPHA_ID"
+
+# Set alphacli with `--from alice`. Note. keys command can't accept `--from` args.
+ALPHACLI_ALICE="${ALPHACLI_BINARY} --home ${ALPHA_DATA} --from alice --keyring-backend=test "
+ALPHACLI_BOB="${ALPHACLI_BINARY} --home ${ALPHA_DATA} --from bob --keyring-backend=test "
+ALPHACLI_TOKEN_OWNER="${ALPHACLI_BINARY} --home ${ALPHA_DATA} --from tokenowner --keyring-backend=test "
+
+println "alpha command for alice: $ALPHACLI_ALICE"
+println "alpha command for bob: $ALPHACLI_BOB"
+println "alpha command for tokenowner: $ALPHACLI_TOKEN_OWNER"
+
+# default admin
+ALPHACLI_ADMIN=$(echo "$ALPHACLI_ALICE")
+
+function query() {
+  infoln "Query hash"
+  ${ALPHACLI_TOKEN_OWNER} query tx $1
+}
+
+# e.g. bank ${ALICE_ALPHA_ID} $coins
+function bank() {
+  infoln "Bank Send By TokenOwner"
+	printAlpha "${ALPHACLI_TOKEN_OWNER} bank send tokenowner \
+	$1 $2"
+}
+
+function balanceOfAlice() {
+  infoln "ERC20 Balance Of ALICE"
+  printAlpha "${ALPHACLI_ALICE} erc20 balance-of \
+  --owner-address ${ALICE_ALPHA_ID}"
+}
+
+function balanceOfBob() {
+  infoln "ERC20 Balance Of BOB"
+  printAlpha "${ALPHACLI_BOB} erc20 balance-of \
+  --owner-address ${BOB_ALPHA_ID}"
+}
+
+function balanceOfTokenOwner() {
+  infoln "ERC20 Balance Of TokenOwner"
+  printAlpha "${ALPHACLI_TOKEN_OWNER} erc20 balance-of \
+  --owner-address ${TOKEN_OWNER_ALPHA_ID}"
+}
+
+# e.g. mint ${ALICE_ALPHA_ID} 1000
+# Note: run by token owner
+function mint() {
+  infoln "Mint ERC20 token By Admin"
+  printAlpha "${ALPHACLI_TOKEN_OWNER} erc20 mint \
+  --receiver-address $1 \
+  --amount $2"
+}
+
+# e.g. transfer ${ALICE_ALPHA_ID} 1000
+function transfer() {
+  infoln "ERC20 Transfer By Admin Account"
+  printAlpha "${ALPHACLI_ADMIN} erc20 transfer \
+  --receiver-address $1 \
+  --amount $2"
+}
+
+# e.g. approve ${ALICE_ALPHA_ID} 1000
+function approve() {
+  infoln "ERC20 Approve By Admin"
+  printAlpha "${ALPHACLI_ADMIN} erc20 approve \
+  --spender-address $1 \
+  --amount $2"
+}

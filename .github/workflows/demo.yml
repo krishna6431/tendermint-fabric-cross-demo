@@ -1,0 +1,107 @@
+name: Demo
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  demo:
+    name: demo
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set up Go 1.16
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+      - uses: actions/checkout@v2
+      - name: Cache go modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Build Demo Environment
+        working-directory: demo
+        run: |
+          make build -j5
+      - name: Start Network
+        working-directory: demo
+        run: |
+          make network
+      - name: Run Init Demo
+        working-directory: demo
+        run: |
+          make run-init
+      - name: Run Demo
+        working-directory: demo
+        run: |
+          make run
+      - name: Run Alphacli Sample
+        working-directory: demo
+        run: |
+          make test-alphacli
+      - name: Run Betacli Sample
+        working-directory: demo
+        run: |
+          make test-betacli
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.17
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
+      - uses: actions/checkout@v3
+      - name: golangci-lint for alpha cmds
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.45.2
+          working-directory: cmds/alpha
+      - name: golangci-lint for beta cmds
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.45.2
+          working-directory: cmds/beta
+      - name: golangci-lint for contract modules
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.45.2
+          working-directory: contracts/erc20/
+      - name: golangci-lint for fabibc
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.45.2
+          working-directory: demo/chains/fabric/chaincode/fabibc
+      - name: golangci-lint for simapp
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.45.2
+          working-directory: demo/chains/tendermint
+  unit-test:
+    name: unit-test
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set up Go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - uses: actions/checkout@v2
+      - name: Cache go modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Run Unit Test For contracts
+        working-directory: contracts/erc20/
+        run: |
+          make test

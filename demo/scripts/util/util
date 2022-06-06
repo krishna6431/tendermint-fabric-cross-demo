@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+set -eu
+
+CUR_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}); pwd)
+
+function debugMode() {
+  if [ -n "${1+x}" ] && [ "$1" = "--debug" ]; then
+  set -x
+  fi
+}
+
+LATEST_RESULT=""
+
+function print() {
+  local cmd=$1
+  local display=$2
+  local errorMsg=$3 # this flag means error expected
+
+  if [ "$2" = "alphacli" ]; then
+    echo "[$(date "+%Y/%m/%d %H:%M:%S")] $cmd" | awk \
+    -v cli1="${ALPHACLI_BOB}" \
+    -v cli2="${ALPHACLI_ALICE}" \
+    -v cli3="${ALPHACLI_TOKEN_OWNER}" \
+    -v disp="$display" \
+    '{ sub(cli1, disp); sub(cli2, disp); sub(cli3, disp); print $0}'
+  else
+    echo "[$(date "+%Y/%m/%d %H:%M:%S")] $cmd" | awk \
+    -v cli1="${BETACLI_BOB}" \
+    -v cli2="${BETACLI_ALICE}" \
+    -v cli3="${BETACLI_TOKEN_OWNER}" \
+    -v disp="$display" \
+    '{ sub(cli1, disp); sub(cli2, disp); sub(cli3, disp); print $0}'
+  fi
+
+  local res
+  local status=0
+  res="$($cmd)" || status=$?
+  LATEST_RESULT=${res##*$'\n'}
+
+  if [ -z "$errorMsg" ]; then
+    if test $status -eq 0; then
+      successln "${res##*$'\n'}"
+    else
+      errorln "${res}"
+    fi
+  else
+    if test $status -eq 1; then
+      successln ""
+    else
+      errorln $errorMsg
+    fi
+  fi
+  if [ -n "$errorMsg" ]; then return 0;fi
+  return $status
+}
+
+function printAlpha() {
+  print "$1" alphacli ""
+}
+
+function printAlphaWithError() {
+  print "$1" alphacli "$2"
+}
+
+function printBeta() {
+  print "$1" betacli ""
+}
+
+function printBetaWithError() {
+  print "$1" betacli "$2"
+}
+
+function printRelay() {
+  print "$1" uly ""
+}
+
+function isCommit() {
+  if [[ $1 == *"COORDINATOR_DECISION_COMMIT"* ]]; then
+    successln "SUCCESS: Tx $2 is commited"
+  else
+    errorln "FAIL: Tx $2 is not commited"
+    return 1
+  fi
+}
+
+function isAbort() {
+  if [[ $1 == *"COORDINATOR_DECISION_ABORT"* ]]; then
+    successln "SUCCESS: Tx $2 is aborted"
+  else
+    errorln "FAIL: Tx $2 is not aborted"
+    return 1
+  fi
+}
+
+function assertEqual() {
+  local actual=$1
+  local expected=$2
+  local message=$3
+  if [ "$1" = "$2" ]; then
+    successln "SUCCESS: $3"
+  else
+    errorln "FAIL: expected $2 but actual $1"
+    return 1
+  fi
+}
+
+function waitSuccess() {
+  local cmd=$1
+  local try_count=$2
+  local res
+  local status=0
+  set +e
+  for i in $(seq $try_count); do
+    res="$($cmd 2>&1)"
+    status=$?
+    if [ $status -eq 0 ]; then
+      set -e
+      successln "Event detected: ${res##*$'\n'}"
+      break
+    fi
+    sleep 5
+  done
+  set -e
+  return $status
+}

@@ -1,0 +1,10 @@
+.bin
+/artifacts
+/build
+/chaincode/fabibc/vendor
+/config
+/external-builders/config/**/code.tar.gz
+/organizations
+log.txt
+!Dockerfiles/data
+!external-builders/bin

@@ -1,0 +1,18 @@
+OrdererOrgs:
+  - Name: Orderer
+    Domain: fabric-tendermint-cross-demo.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS:
+          - localhost
+PeerOrgs:
+  - Name: Org1
+    Domain: org1.fabric-tendermint-cross-demo.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS:
+        - localhost
+    Users:
+      Count: 3

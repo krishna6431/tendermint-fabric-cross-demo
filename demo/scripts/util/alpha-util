@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -eu
+
+CUR_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}); pwd)
+source ${CUR_DIR}/color
+source ${CUR_DIR}/env
+source ${SCRIPT_DIR}/util/util
+
+# alpha (tendermint)
+ALPHACLI_BINARY=${BIN_DIR}/alphacli
+ALPHACLI_CONFIG_DIR=${DEMO_DIR}/.alphacli
+CHAINID=ibc0
+ALPHA_DATA="$ALPHACLI_CONFIG_DIR/$CHAINID"
+
+ALPHACLI="${ALPHACLI_BINARY} --home ${ALPHA_DATA}"
+println "alpha command for user: $ALPHACLI"
+
+###
+# Initialize ALPHACLI configurations
+# - Each user need to run this function
+#   e.g. $ initALPHACLIConfig tokenowner
+##
+function initALPHACLIConfig() {
+  local user=$1
+  local cli="${ALPHACLI_BINARY} --home $ALPHA_DATA"
+
+  # create user seed
+  $cli keys add $user --keyring-backend="test" --output json > $ALPHA_DATA/${user}_seed.json 2> /dev/null
+  sleep 1
+}

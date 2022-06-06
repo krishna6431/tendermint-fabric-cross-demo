@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -x
+
+BINARY=$1
+CHAINID=$2
+CHAINDIR=$3
+
+ADDR=$($BINARY --home $CHAINDIR/$CHAINID keys --keyring-backend="test" show tokenowner -a)
+
+go build -v \
+-ldflags "-X github.com/datachainlab/fabric-tendermint-cross-demo/demo/chains/tendermint/simapp.ERC20Admin=${ADDR} -X github.com/datachainlab/fabric-tendermint-cross-demo/demo/chains/tendermint/simapp.LPAdmin=${ADDR}" \
+-mod=vendor -o /usr/bin/simd /root/simapp/simd

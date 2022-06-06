@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/util/env
+source ${SCRIPT_DIR}/util/alpha-util
+
+println "Initialize alpha cli environment"
+
+# Alpha
+rm -rf ${ALPHACLI_CONFIG_DIR} && mkdir -p ${ALPHA_DATA}
+cp -r ${FIXTURES_DIR}/tendermint/ibc0 ${ALPHACLI_CONFIG_DIR}/
+
+initALPHACLIConfig alice
+initALPHACLIConfig bob
+
+## Define variables after initALPHACLIConfig called
+source ${SCRIPT_DIR}/util/alpha-variables
+
+# Create user via sending coin to each user
+coins="100000stake,100000samoleans"
+bank ${ALICE_ALPHA_ID} $coins
+sleep 1
+bank ${BOB_ALPHA_ID} $coins
+sleep 1

@@ -1,0 +1,28 @@
+syntax = "proto3";
+package erc20mgr;
+
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+import "erc20mgr/types.proto";
+
+option go_package = "github.com/datachainlab/fabric-tendermint-cross-demo/contracts/erc20/modules/erc20mgr/types";
+option (gogoproto.goproto_getters_all) = false;
+
+// Msg defines the cross Msg service.
+service Msg {
+  rpc ContractCallTx(MsgContractCallTx) returns (MsgContractCallTxResponse);
+}
+
+message MsgContractCallTx {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+  ContractCallRequest request = 1;
+  repeated bytes signers      = 2 [(gogoproto.casttype) = "github.com/datachainlab/cross/x/core/auth/types.AccountID"];
+}
+
+// MsgSignTxResponse defines the Msg/SignTx response type.
+message MsgContractCallTxResponse {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+  // TODO return something?
+}

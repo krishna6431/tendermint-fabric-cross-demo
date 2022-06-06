@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/../util/env
+source ${SCRIPT_DIR}/util/beta-util
+
+TOKEN_OWNER_ID=$(${BETACLI_TOKEN_OWNER} fabric id)
+echo $TOKEN_OWNER_ID > $1

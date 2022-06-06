@@ -1,0 +1,50 @@
+run:
+  deadline: 10m
+  build-tags:
+    - integration
+  skip-dirs:
+    - proto
+    - scripts
+    - third_party
+    - vendor
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/datachainlab/fabric-tendermint-cross-demo
+  misspell:
+    locale: US
+  revive:
+    # see https://golangci-lint.run/usage/linters/#revive
+    # see https://github.com/mgechev/revive#available-rules for details.
+    ignore-generated-header: true
+    severity: warning
+    confidence: 0.8
+    rules:
+      - name: indent-error-flow
+        severity: warning
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/datachainlab/fabric-tendermint-cross-demo)
+
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - gofumpt
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+  presets:
+    - format
+    - unused
+  fast: false

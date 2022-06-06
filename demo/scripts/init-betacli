@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/util/env
+source ${SCRIPT_DIR}/util/beta-util
+
+println "Initialize beta cli environment"
+
+# Beta
+rm -rf ${BETACLI_CONFIG_DIR} && cp -r ${DEMO_DIR}/configs/fabric ${BETACLI_CONFIG_DIR}
+initBETACLIConfig

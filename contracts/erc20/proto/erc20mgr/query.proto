@@ -1,0 +1,45 @@
+syntax = "proto3";
+package erc20mgr;
+
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+import "erc20mgr/types.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/datachainlab/fabric-tendermint-cross-demo/contracts/erc20/modules/erc20mgr/types";
+option (gogoproto.goproto_getters_all) = false;
+
+service Query {
+  rpc BalanceOf(QueryBalanceOfRequest) returns (QueryBalanceOfResponse) {
+    option (google.api.http).get = "/erc20mgr/types/balanceof";
+  }
+
+  rpc TotalSupply(google.protobuf.Empty) returns (QueryTotalSupplyResponse) {
+    option (google.api.http).get = "/erc20mgr/types/totalsupply";
+  }
+
+  rpc Allowance(QueryAllowanceRequest) returns (QueryAllowanceResponse) {
+    option (google.api.http).get = "/erc20mgr/types/allowance";
+  }
+}
+
+message QueryBalanceOfRequest {
+  string id = 1 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress"];
+}
+
+message QueryBalanceOfResponse {
+  Balance balance = 1;
+}
+
+message QueryTotalSupplyResponse {
+  int64 totalSupply = 1;
+}
+
+message QueryAllowanceRequest {
+  string owner = 1 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress"];
+  string spender = 2 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress"];
+}
+
+message QueryAllowanceResponse {
+  int64 amount = 1;
+}

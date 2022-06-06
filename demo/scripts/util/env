@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+DOCKER=docker
+
+CUR_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}); pwd)
+DEMO_DIR=$(cd ${CUR_DIR}/../../; pwd)
+BIN_DIR=${DEMO_DIR}/bin
+DATA_DIR=${DEMO_DIR}/data
+SCRIPT_DIR=${DEMO_DIR}/scripts
+FIXTURES_DIR=${DEMO_DIR}/fixtures

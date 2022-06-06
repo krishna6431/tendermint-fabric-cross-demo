@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/../util/env
+source ${SCRIPT_DIR}/util/color
+source ${SCRIPT_DIR}/util/beta-util
+
+# Note: Run after initialization done
+
+ALICE_BETA_ID=$(${BETACLI_ALICE} fabric id)
+BOB_BETA_ID=$(${BETACLI_BOB} fabric id)
+TOKEN_OWNER_BETA_ID=$(${BETACLI_TOKEN_OWNER} fabric id)
+
+echo "token owner ID: $TOKEN_OWNER_BETA_ID"
+echo "alice ID: $ALICE_BETA_ID"
+echo "bob ID: $BOB_BETA_ID"
+
+# default admin
+BETACLI_ADMIN=$(echo "$BETACLI_TOKEN_OWNER")
+
+function balanceOfAlice() {
+  infoln "ERC20 Balance Of ALICE"
+  printBeta "${BETACLI_ALICE} erc20 balance-of \
+  --owner-id ${ALICE_BETA_ID}"
+}
+
+function balanceOfBob() {
+  infoln "ERC20 Balance Of BOB"
+  printBeta "${BETACLI_BOB} erc20 balance-of \
+  --owner-id ${BOB_BETA_ID}"
+}
+
+function balanceOfTokenOwner() {
+  infoln "ERC20 Balance Of TokenOwner"
+  printBeta "${BETACLI_TOKEN_OWNER} erc20 balance-of \
+  --owner-id ${TOKEN_OWNER_BETA_ID}"
+}
+
+# execute by admin account
+# e.g. mint ${ALICE_BETA_ID} 1000
+function mint() {
+  infoln "Mint ERC20 token By Admin"
+  printBeta "${BETACLI_ADMIN} erc20 mint \
+  --receiver-id $1 \
+  --amount $2"
+}
+
+# execute by admin account
+# e.g. transfer ${ALICE_BETA_ID} 1000
+function transfer() {
+  infoln "ERC20 Transfer By Admin Account"
+  printBeta "${BETACLI_ADMIN} erc20 transfer \
+  --receiver-id $1 \
+  --amount $2"
+}
+
+# execute by admin account
+# e.g. approve ${ALICE_BETA_ID} 1000
+function approve() {
+  infoln "ERC20 Approve By Admin"
+  printBeta "${BETACLI_ADMIN} erc20 approve \
+  --spender-id $1 \
+  --amount $2"
+}

@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/../util/env
+source ${SCRIPT_DIR}/util/alpha-variables
+source ${SCRIPT_DIR}/util/beta-variables
+source ${SCRIPT_DIR}/util/relayer-util
+
+debugMode ${1+x}
+
+AMOUNT=10
+
+infoln "### Scenario : Swap tokens between Alice and Bob ###"
+infoln "Mint token to Alice by TokenOwner on the Alpha Chain"
+printAlpha "${ALPHACLI_TOKEN_OWNER} erc20 mint \
+--receiver-address ${ALICE_ALPHA_ID} \
+--amount ${AMOUNT}"
+
+infoln "Mint token to Bob by TokenOwner on the Beta Chain"
+printBeta "${BETACLI_TOKEN_OWNER} erc20 mint \
+--receiver-id ${BOB_BETA_ID} \
+--amount ${AMOUNT}"
+
+printAlpha "${ALPHACLI_ALICE} erc20 balance-of --owner-address ${ALICE_ALPHA_ID}"
+alice_alpha_amount=${LATEST_RESULT}
+expected_alice_alpha=$((${alice_alpha_amount} - ${AMOUNT}))
+printAlpha "${ALPHACLI_BOB} erc20 balance-of --owner-address ${BOB_ALPHA_ID}"
+bob_alpha_amount=${LATEST_RESULT}
+expected_bob_alpha=$((${bob_alpha_amount} + ${AMOUNT}))
+printBeta "${BETACLI_ALICE} erc20 balance-of --owner-id ${ALICE_BETA_ID}"
+alice_beta_amount=${LATEST_RESULT}
+expected_alice_beta=$((${alice_beta_amount} + ${AMOUNT}))
+printBeta "${BETACLI_BOB} erc20 balance-of --owner-id ${BOB_BETA_ID}"
+bob_beta_amount=${LATEST_RESULT}
+expected_bob_beta=$((${bob_beta_amount} - ${AMOUNT}))
+
+infoln "Create a ContractTx by TokenOwner on the Off Chain"
+call_info="{\"method\":\"transfer\",\"args\":[\"${BOB_ALPHA_ID}\",\"${AMOUNT}\"]}"
+printAlpha "${ALPHACLI_BINARY} --home ${ALPHA_DATA} cross create-contract-tx
+--signer-address ${ALICE_ALPHA_ID} \
+--call-info $call_info \
+--output-document ${DATA_DIR}/alpha-tx-1.json"
+
+call_info="{\"method\":\"transfer\",\"args\":[\"${ALICE_BETA_ID}\",\"${AMOUNT}\"]}"
+chan="channel-0:cross"
+printBeta "${BETACLI_TOKEN_OWNER} cross create-contract-tx
+--signer-id ${BOB_BETA_ID} \
+--call-info $call_info \
+--initiator-chain-channel $chan \
+--output-document ${DATA_DIR}/beta-tx-1.json"
+
+infoln "Create and send an InitiateTx to start Cross-chain tx by Alice on the Alpha Chain"
+printAlpha "${ALPHACLI_ALICE} cross create-initiate-tx --contract-txs=${DATA_DIR}/alpha-tx-1.json,${DATA_DIR}/beta-tx-1.json"
+tx_id=$(echo ${LATEST_RESULT} | jq -r '.logs[0].events[1].attributes[0].value')
+
+infoln "Send IBCSignTx for the InitiateTx by Bob on the Beta Chain"
+printBeta "${BETACLI_BOB} cross ibc-signtx
+--tx-id ${tx_id} \
+--initiator-chain-channel ${chan}"
+
+sleep 5
+printRelay "${RLY} tx relay ${PATH_NAME}"
+sleep 5
+printRelay "${RLY} tx relay-acknowledgements ${PATH_NAME}"
+sleep 5
+
+infoln "Check if state is not committed yet"
+printAlpha "${ALPHACLI_BINARY} --home ${ALPHA_DATA} cross tx-auth-state $tx_id"
+printAlpha "${ALPHACLI_BINARY} --home ${ALPHA_DATA} cross coordinator-state $tx_id"
+printAlpha "${ALPHACLI_ALICE} erc20 balance-of --owner-address ${ALICE_ALPHA_ID}"
+actual_alice_alpha=${LATEST_RESULT}
+printAlpha "${ALPHACLI_BOB} erc20 balance-of --owner-address ${BOB_ALPHA_ID}"
+actual_bob_alpha=${LATEST_RESULT}
+assertEqual $actual_alice_alpha $alice_alpha_amount "Alice has still $actual_alice_alpha token during Prepare phase."
+assertEqual $actual_bob_alpha $bob_alpha_amount "Bob has still $actual_bob_alpha token during Prepare phase."
+
+infoln "Relay packets"
+set +e
+for i in {1..5}; do
+	printRelay "${RLY} tx relay ${PATH_NAME}"
+	printRelay "${RLY} tx relay-acknowledgements ${PATH_NAME}"
+	printRelay "${RLY} query unrelayed-packets ${PATH_NAME}"
+	packet=${LATEST_RESULT}
+	printRelay "${RLY} query unrelayed-acknowledgements ${PATH_NAME}"
+	ack=${LATEST_RESULT}
+	printAlpha "${ALPHACLI_BINARY} --home ${ALPHA_DATA} cross tx-auth-state $tx_id"
+	printAlpha "${ALPHACLI_BINARY} --home ${ALPHA_DATA} cross coordinator-state $tx_id"
+	if [ "$packet" = '{"src":[],"dst":[]}' ] && [ "$ack" = '{"src":[],"dst":[]}' ]; then
+		break
+	fi
+	sleep 5
+done
+set -e
+
+infoln "Assert result"
+printAlpha "${ALPHACLI_ALICE} erc20 balance-of --owner-address ${ALICE_ALPHA_ID}"
+actual_alice_alpha=${LATEST_RESULT}
+printAlpha "${ALPHACLI_BOB} erc20 balance-of --owner-address ${BOB_ALPHA_ID}"
+actual_bob_alpha=${LATEST_RESULT}
+printBeta "${BETACLI_ALICE} erc20 balance-of --owner-id ${ALICE_BETA_ID}"
+actual_alice_beta=${LATEST_RESULT}
+printBeta "${BETACLI_BOB} erc20 balance-of --owner-id ${BOB_BETA_ID}"
+actual_bob_beta=${LATEST_RESULT}
+
+printAlpha "${ALPHACLI_BINARY} --home ${ALPHA_DATA} cross coordinator-state $tx_id"
+tx_res=${LATEST_RESULT}
+isCommit "$tx_res" "$tx_id"
+assertEqual $actual_alice_alpha $expected_alice_alpha \
+"Alice balance on the Alpha from $alice_alpha_amount to $actual_alice_alpha"
+assertEqual $actual_bob_alpha $expected_bob_alpha \
+"Bob balance on the Alpha from $bob_alpha_amount to $actual_bob_alpha"
+assertEqual $actual_alice_beta $expected_alice_beta \
+"Alice balance on the Beta from $alice_beta_amount to $actual_alice_beta"
+assertEqual $actual_bob_beta $expected_bob_beta \
+"Bob balance on the Beta from $bob_beta_amount to $actual_bob_beta"

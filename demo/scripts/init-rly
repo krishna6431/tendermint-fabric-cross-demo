@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/util/env
+source ${SCRIPT_DIR}/util/relayer-util
+
+echo "Generating ${RLY_BINARY} configurations..."
+
+# Ensure ${RLY_BINARY} is installed
+if ! [ -x ${RLY_BINARY} ]; then
+  echo "Error: ${RLY_BINARY} is not installed." >&2
+  exit 1
+fi
+
+rm -rf ${RELAYER_CONF} &> /dev/null
+
+${RLY} config init
+${RLY} chains add-dir configs/relayer/demo/
+
+# setup wallet for fabric client
+USER_MSP_CONFIG_PATH="${DEMO_DIR}/chains/fabric/organizations/peerOrganizations/org1.fabric-tendermint-cross-demo.com/users/User1@org1.fabric-tendermint-cross-demo.com/msp"
+${RLY} fabric wallet populate ${CHAINID_TWO} \
+  --cert ${USER_MSP_CONFIG_PATH}/signcerts/User1@org1.fabric-tendermint-cross-demo.com-cert.pem \
+  --key ${USER_MSP_CONFIG_PATH}/keystore/priv_sk
+## initialize the state of chaincode
+${RLY} fabric chaincode init ${CHAINID_TWO}
+
+# setup key for tendermint client
+SEED0=$(jq -r '.mnemonic' < ${FIXTURES_DIR}/tendermint/ibc0/key_seed.json)
+echo "Key $(${RLY} tendermint keys restore ibc0 testkey "$SEED0") imported from ibc0 to relayer..."

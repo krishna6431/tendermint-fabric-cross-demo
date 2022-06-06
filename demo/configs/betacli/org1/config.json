@@ -1,0 +1,7 @@
+{
+  "chain_id": "ibc1",
+  "wallet_label": "Org1MSP",
+  "channel": "channel1",
+  "chaincode_id": "fabibc",
+  "connection_profile_path": "./configs/fabric/connection-profile/org1/local.yaml"
+}

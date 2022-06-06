@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -eu
+
+CUR_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}); pwd)
+source ${CUR_DIR}/color
+source ${CUR_DIR}/env
+source ${SCRIPT_DIR}/util/util
+
+# beta (fabric)
+BETACLI_BINARY=${BIN_DIR}/betacli
+BETACLI_CONFIG_DIR=${DEMO_DIR}/.betacli
+
+BETACLI_ALICE="${BETACLI_BINARY} --home ${BETACLI_CONFIG_DIR}/alice"
+BETACLI_BOB="${BETACLI_BINARY} --home ${BETACLI_CONFIG_DIR}/bob"
+BETACLI_TOKEN_OWNER="${BETACLI_BINARY} --home ${BETACLI_CONFIG_DIR}/tokenowner"
+println "beta command for alice: $BETACLI_ALICE"
+println "beta command for bob: $BETACLI_BOB"
+println "beta command for tokenowner: $BETACLI_TOKEN_OWNER"
+
+###
+# Initialize BETACLI configurations
+##
+function initBETACLIConfig() {
+  ${BETACLI_ALICE} config init \
+  --config ${DEMO_DIR}/configs/betacli/org1/config.json \
+  --cert ${DEMO_DIR}/chains/fabric/organizations/peerOrganizations/org1.fabric-tendermint-cross-demo.com/users/User1@org1.fabric-tendermint-cross-demo.com/msp/signcerts/User1@org1.fabric-tendermint-cross-demo.com-cert.pem \
+  --key ${DEMO_DIR}/chains/fabric/organizations/peerOrganizations/org1.fabric-tendermint-cross-demo.com/users/User1@org1.fabric-tendermint-cross-demo.com/msp/keystore/priv_sk
+
+  ${BETACLI_BOB} config init \
+  --config ${DEMO_DIR}/configs/betacli/org1/config.json \
+  --cert ${DEMO_DIR}/chains/fabric/organizations/peerOrganizations/org1.fabric-tendermint-cross-demo.com/users/User2@org1.fabric-tendermint-cross-demo.com/msp/signcerts/User2@org1.fabric-tendermint-cross-demo.com-cert.pem \
+  --key ${DEMO_DIR}/chains/fabric/organizations/peerOrganizations/org1.fabric-tendermint-cross-demo.com/users/User2@org1.fabric-tendermint-cross-demo.com/msp/keystore/priv_sk
+
+  ${BETACLI_TOKEN_OWNER} config init \
+  --config ${DEMO_DIR}/configs/betacli/org1/config.json \
+  --cert ${DEMO_DIR}/chains/fabric/organizations/peerOrganizations/org1.fabric-tendermint-cross-demo.com/users/User3@org1.fabric-tendermint-cross-demo.com/msp/signcerts/User3@org1.fabric-tendermint-cross-demo.com-cert.pem \
+  --key ${DEMO_DIR}/chains/fabric/organizations/peerOrganizations/org1.fabric-tendermint-cross-demo.com/users/User3@org1.fabric-tendermint-cross-demo.com/msp/keystore/priv_sk
+}

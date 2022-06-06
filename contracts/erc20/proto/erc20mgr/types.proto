@@ -1,0 +1,28 @@
+syntax = "proto3";
+package erc20mgr;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/datachainlab/fabric-tendermint-cross-demo/contracts/erc20/modules/erc20mgr/types";
+option (gogoproto.goproto_getters_all) = false;
+
+message Params {
+  option (gogoproto.goproto_stringer)       = false;
+  string admin = 1 [(gogoproto.moretags) = "yaml:\"admin,omitempty\""];
+  bool isSetAdmin = 2 [(gogoproto.moretags) = "yaml:\"is_set_admin,omitempty\""];
+}
+
+message GenesisState {
+  Params params = 1 [(gogoproto.nullable) = false];
+}
+
+message ContractCallRequest {
+  string method = 1;
+  repeated string args = 2;
+}
+
+message Balance {
+  string id = 1 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress"];
+  int64 amount = 2;
+}

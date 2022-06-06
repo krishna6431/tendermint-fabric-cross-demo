@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/../util/env
+source ${SCRIPT_DIR}/util/color
+source ${SCRIPT_DIR}/util/alpha-variables
+
+debugMode ${1+x}
+
+infoln "### Alphacli Command Test ###"
+
+# Check account address
+assertEqual $ALICE_ALPHA_ID $($ALPHACLI_ALICE tendermint account-id) ""
+assertEqual $BOB_ALPHA_ID $($ALPHACLI_BOB tendermint account-id) ""
+assertEqual $TOKEN_OWNER_ALPHA_ID $($ALPHACLI_TOKEN_OWNER tendermint account-id) ""
+
+mint ${ALICE_ALPHA_ID} 5000
+sleep 1
+mint ${BOB_ALPHA_ID} 3000
+sleep 1
+mint ${TOKEN_OWNER_ALPHA_ID} 5000
+sleep 1
+
+infoln "GET Initial Balance for ALICE"
+balanceOfAlice
+AliceBalance=$(echo "$LATEST_RESULT")
+
+infoln "GET Initial Balance for BOB"
+balanceOfBob
+bobBalance=$(echo "$LATEST_RESULT")
+
+infoln "GET Initial Balance for TOKEN_OWNER"
+balanceOfTokenOwner
+tokenOwnerBalance=$(echo "$LATEST_RESULT")
+
+
+# transfer to bob
+transfer ${BOB_ALPHA_ID} 1000
+balanceOfBob
+assertEqual $LATEST_RESULT $(( $bobBalance+1000 )) ""
+bobBalance=$(echo "$LATEST_RESULT")

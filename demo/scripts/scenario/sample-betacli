@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -eu
+
+source $(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/../util/env
+source ${SCRIPT_DIR}/util/color
+source ${SCRIPT_DIR}/util/beta-variables
+
+debugMode ${1+x}
+
+infoln "### Betacli Command Test ###"
+
+mint ${ALICE_BETA_ID} 5000
+mint ${BOB_BETA_ID} 5000
+mint ${TOKEN_OWNER_BETA_ID} 5000
+
+infoln "GET Initial Balance for ALICE"
+balanceOfAlice
+aliceBalance=$(echo "$LATEST_RESULT")
+
+infoln "GET Initial Balance for BOB"
+balanceOfBob
+bobBalance=$(echo "$LATEST_RESULT")
+
+infoln "GET Initial Balance for TOKEN OWNER"
+balanceOfTokenOwner
+tokenownerBalance=$(echo "$LATEST_RESULT")
+
+
+# transfer to bob
+transfer ${BOB_BETA_ID} 1000
+balanceOfBob
+assertEqual $LATEST_RESULT $(( $bobBalance+1000 )) ""
+bobBalance=$(echo "$LATEST_RESULT")

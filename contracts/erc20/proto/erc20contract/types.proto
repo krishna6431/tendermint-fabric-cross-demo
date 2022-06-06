@@ -1,0 +1,16 @@
+syntax = "proto3";
+package erc20contract;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/datachainlab/fabric-tendermint-cross-demo/contracts/erc20/modules/erc20contract/types";
+option (gogoproto.goproto_getters_all) = false;
+
+message GenesisState {
+}
+
+message ContractCallRequest {
+  string method = 1;
+  repeated string args = 2;
+}
